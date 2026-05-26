@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Card Optimizer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #f2f4f7; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a2e; }
+  input, button { font-family: inherit; }
+
+  #header { background: #1a1a2e; padding: 20px 16px 16px; text-align: center; }
+  #header .eyebrow { font-size: 10px; letter-spacing: 4px; color: #a0a8c0; text-transform: uppercase; margin-bottom: 6px; }
+  #header h1 { font-size: 24px; font-weight: 700; color: #ffffff; }
+  #header p { margin-top: 5px; font-size: 12px; color: #7080a0; }
+
+  #main { max-width: 600px; margin: 0 auto; padding: 16px 14px; }
+
+  #search-wrap { position: relative; margin-bottom: 12px; }
+  #search { width: 100%; padding: 14px 40px 14px 44px; background: #ffffff; border: 2px solid #cbd0d8; border-radius: 12px; color: #1a1a2e; font-size: 15px; outline: none; }
+  #search:focus { border-color: #4a6cf7; }
+  #search::placeholder { color: #9098a8; }
+  #search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; pointer-events: none; }
+  #clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9098a8; font-size: 22px; cursor: pointer; padding: 4px; display: none; }
+
+  #match-banner { background: #e8f5e9; border: 2px solid #43a047; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #2e7d32; margin-bottom: 12px; display: none; font-weight: 600; }
+  #no-match { background: #fff8e1; border: 2px solid #ffa000; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #e65100; margin-bottom: 12px; display: none; }
+  #no-match a { color: #1565c0; cursor: pointer; font-weight: 700; text-decoration: underline; }
+
+  #cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .cat-btn { background: #ffffff; border: 2px solid #cbd0d8; border-radius: 10px; padding: 11px 10px; color: #333d4d; font-size: 12px; cursor: pointer; text-align: left; transition: all 0.15s; font-weight: 500; }
+  .cat-btn:hover { border-color: #4a6cf7; background: #eef1ff; }
+  .cat-btn.active { background: #4a6cf7; border-color: #4a6cf7; color: #ffffff; font-weight: 700; }
+
+  #result { display: none; }
+
+  #winner-card { background: #ffffff; border: 2px solid #4a6cf7; border-radius: 16px; padding: 18px; margin-bottom: 12px; position: relative; box-shadow: 0 4px 16px rgba(74,108,247,0.12); }
+  #best-badge { position: absolute; top: 14px; right: 14px; background: #4a6cf7; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+  #winner-eyebrow { font-size: 11px; color: #6070a0; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  #winner-name { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; padding-right: 80px; }
+  #winner-pct { font-size: 36px; font-weight: 800; color: #4a6cf7; margin-bottom: 2px; }
+  #winner-label { font-size: 13px; color: #5060a0; margin-bottom: 10px; }
+  #winner-note { background: #fff8e1; border-left: 4px solid #ffa000; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #5d4037; margin-bottom: 10px; display: none; line-height: 1.5; }
+  #winner-perks { font-size: 12px; color: #5060a0; margin-bottom: 16px; }
+  #winner-perks span { margin-right: 12px; }
+
+  .action-btns { display: flex; gap: 8px; margin-bottom: 10px; }
+  .action-btn { flex: 1; padding: 12px 8px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; }
+  .action-btn-inner { text-align: left; }
+  .action-btn-inner strong { display: block; font-size: 13px; }
+  .action-btn-inner small { font-size: 11px; font-weight: 400; opacity: 0.85; }
+
+  .btn-claude { background: #1b8a4a; color: #ffffff; }
+  .btn-chatgpt { background: #1a6abf; color: #ffffff; }
+
+  #btn-checkrates { width: 100%; padding: 14px; background: #e65100; border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; }
+  #offer-hint { font-size: 11px; color: #7080a0; text-align: center; margin-bottom: 12px; }
+
+  #toggle-btn { background: #ffffff; border: 2px solid #4a6cf7; border-radius: 10px; padding: 11px 14px; color: #4a6cf7; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 10px; }
+
+  #rankings-list { display: none; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .rank-row { background: #ffffff; border: 1px solid #e0e4ec; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+  .rank-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .rank-info { flex: 1; min-width: 0; }
+  .rank-name { font-size: 13px; color: #1a1a2e; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank-label { font-size: 11px; color: #7080a0; margin-top: 2px; }
+  .rank-right { text-align: right; flex-shrink: 0; }
+  .rank-pct { font-size: 16px; font-weight: 800; color: #7080a0; }
+  .rank-pct.gold { color: #4a6cf7; }
+  .rakuten-tag { font-size: 10px; color: #e65100; font-weight: 600; }
+
+  #empty-state { background: #ffffff; border-radius: 16px; padding: 36px 20px; text-align: center; color: #9098a8; font-size: 14px; line-height: 1.8; margin-bottom: 16px; border: 2px dashed #cbd0d8; }
+
+  #footer { background: #ffffff; border: 1px solid #e0e4ec; border-radius: 12px; padding: 14px; font-size: 11px; color: #7080a0; line-height: 1.9; }
+  #footer strong { color: #1a1a2e; display: block; margin-bottom: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="eyebrow">Diamond Honors · Personal Card Intelligence</div>
+  <h1>💳 Card Optimizer</h1>
+  <p>Offline · 8 cards · BofA 75% Diamond boost applied</p>
+</div>
+
+<div id="main">
+  <div id="search-wrap">
+    <span id="search-icon">🔍</span>
+    <input id="search" type="text" placeholder="Merchant or category (e.g. Uniqlo, gas, dining…)" oninput="handleSearch(this.value)">
+    <button id="clear-btn" onclick="clearSearch()">×</button>
+  </div>
+
+  <div id="match-banner"></div>
+  <div id="no-match"></div>
+
+  <div id="cat-grid"></div>
+
+  <div id="result">
+    <div id="winner-card">
+      <div id="best-badge">Best Card</div>
+      <div id="winner-eyebrow">Use This Card</div>
+      <div id="winner-name"></div>
+      <div id="winner-pct"></div>
+      <div id="winner-label"></div>
+      <div id="winner-note"></div>
+      <div id="winner-perks"></div>
+
+      <div class="action-btns">
+        <button class="action-btn btn-claude" onclick="openClaude()">
+          <span>🔎</span>
+          <div class="action-btn-inner">
+            <strong>Ask Claude</strong>
+            <small>Check all live deals</small>
+          </div>
+        </button>
+        <button class="action-btn btn-chatgpt" onclick="openChatGPT()">
+          <span>✦</span>
+          <div class="action-btn-inner">
+            <strong>Ask ChatGPT</strong>
+            <small>Check all live deals</small>
+          </div>
+        </button>
+      </div>
+
+      <button id="btn-checkrates" onclick="checkRates()">
+        ⚠️ Have card rates changed? Ask Claude to verify
+      </button>
+      <div id="offer-hint">Opens a new tab · searches current offers across all issuers + Rakuten</div>
+    </div>
+
+    <button id="toggle-btn" onclick="toggleRankings()">▼ Show All Card Rankings</button>
+    <div id="rankings-list"></div>
+  </div>
+
+  <div id="empty-state">
+    <div style="font-size:40px;margin-bottom:10px">💳</div>
+    Type a merchant name or select a category above
+  </div>
+
+  <div id="footer">
+    <strong>Notes</strong>
+    · All cards shown at 1¢/point for fair comparison — Chase UR &amp; Amex MR worth 2¢+ via transfer partners<br>
+    · BofA Diamond Honors = 75% bonus applied to all BofA base earn rates<br>
+    · CSR: 8x Chase Travel portal / 4x flights+hotels direct / 3x dining / 1x everything else<br>
+    · CSP: 5x Chase Travel portal / 2x all other travel / 3x dining<br>
+    · Amex Platinum: 5x flights direct or Amex Travel / 5x prepaid hotels via Amex Travel / 1x other<br>
+    · Citi Costco rewards paid once yearly as certificate · CSR annual fee now $795<br>
+    · Rates last updated: May 2026
+  </div>
+</div>
+
+<script>
+const DIAMOND_BOOST = 1.75;
+const ISSUER_COLORS = { bofa:"#c62828", chase:"#1565c0", citi:"#0277bd", amex:"#4a6cf7" };
+
+const CARDS = [
+  { id:"bofa_premium", name:"BofA Premium Rewards Preferred", issuer:"bofa", pointValue:0.01,
+    categories:{ travel:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, dining:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, grocery:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, gas:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, drugstore:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, air:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, hotels:{base:2,boosted:true,label:"2x → 3.5x (Diamond)"}, other:{base:1.5,boosted:true,label:"1.5x → 2.625x (Diamond)"} },
+    perks:["$300 travel credit","$150 lifestyle credit"], rakuten:false },
+
+  { id:"bofa_cash", name:"BofA Cash Rewards", issuer:"bofa", pointValue:0.01,
+    categories:{ online_shopping:{base:3,boosted:true,label:"3% → 5.25% (Diamond)"}, grocery:{base:2,boosted:true,label:"2% → 3.5% (Diamond)"}, wholesale:{base:2,boosted:true,label:"2% → 3.5% (Diamond)"}, dining:{base:1,boosted:true,label:"1% → 1.75% (Diamond)"}, travel:{base:1,boosted:true,label:"1% → 1.75% (Diamond)"}, gas:{base:1,boosted:true,label:"1% → 1.75% (Diamond)"}, other:{base:1,boosted:true,label:"1% → 1.75% (Diamond)"} },
+    perks:["No annual fee","3% on chosen category"], note:"Set 3% category to Online Shopping for max value", rakuten:false },
+
+  { id:"csp", name:"Chase Sapphire Preferred", issuer:"chase", pointValue:0.01,
+    categories:{ air_portal:{base:5,boosted:false,label:"5x UR (Chase Travel portal)"}, hotels_portal:{base:5,boosted:false,label:"5x UR (Chase Travel portal)"}, car_rental:{base:5,boosted:false,label:"5x UR (Chase Travel portal)"}, dining:{base:3,boosted:false,label:"3x UR"}, online_grocery:{base:3,boosted:false,label:"3x UR"}, streaming:{base:3,boosted:false,label:"3x UR"}, air:{base:2,boosted:false,label:"2x UR (direct)"}, hotels:{base:2,boosted:false,label:"2x UR (direct)"}, travel:{base:2,boosted:false,label:"2x UR"}, grocery:{base:1,boosted:false,label:"1x UR"}, other:{base:1,boosted:false,label:"1x UR"} },
+    perks:["$50 hotel credit","Primary rental car insurance"], note:"5x via Chase Travel portal; 2x on all other travel. Transfers often yield 2¢+/UR.", rakuten:true },
+
+  { id:"csr", name:"Chase Sapphire Reserve", issuer:"chase", pointValue:0.01,
+    categories:{ air_portal:{base:8,boosted:false,label:"8x UR (Chase Travel portal)"}, hotels_portal:{base:8,boosted:false,label:"8x UR (Chase Travel portal)"}, car_rental:{base:8,boosted:false,label:"8x UR (Chase Travel portal)"}, air:{base:4,boosted:false,label:"4x UR (direct with airline)"}, hotels:{base:4,boosted:false,label:"4x UR (direct with hotel)"}, dining:{base:3,boosted:false,label:"3x UR"}, travel:{base:1,boosted:false,label:"1x UR (Uber/parking now 1x)"}, grocery:{base:1,boosted:false,label:"1x UR"}, gas:{base:1,boosted:false,label:"1x UR"}, other:{base:1,boosted:false,label:"1x UR"} },
+    perks:["$300 travel credit","Priority Pass","Global Entry"], note:"8x via Chase Travel portal; 4x flights/hotels direct; Uber/parking/transit now only 1x. Fee $795.", rakuten:true },
+
+  { id:"cfu", name:"Chase Freedom Unlimited", issuer:"chase", pointValue:0.01,
+    categories:{ dining:{base:3,boosted:false,label:"3x UR"}, drugstore:{base:3,boosted:false,label:"3x UR"}, travel:{base:1.5,boosted:false,label:"1.5x UR"}, air:{base:1.5,boosted:false,label:"1.5x UR"}, hotels:{base:1.5,boosted:false,label:"1.5x UR"}, grocery:{base:1.5,boosted:false,label:"1.5x UR"}, gas:{base:1.5,boosted:false,label:"1.5x UR"}, other:{base:1.5,boosted:false,label:"1.5x UR"} },
+    perks:["No annual fee","Pairs with CSR/CSP for transfer partners"], rakuten:true },
+
+  { id:"costco", name:"Citi Costco Anywhere Visa", issuer:"citi", pointValue:0.01,
+    categories:{ gas:{base:4,boosted:false,label:"4% (up to $7k/yr)"}, ev_charging:{base:4,boosted:false,label:"4%"}, travel:{base:3,boosted:false,label:"3%"}, air:{base:3,boosted:false,label:"3%"}, dining:{base:3,boosted:false,label:"3%"}, costco:{base:2,boosted:false,label:"2%"}, wholesale:{base:2,boosted:false,label:"2%"}, other:{base:1,boosted:false,label:"1%"} },
+    perks:["4% on gas/EV","Annual reward certificate"], rakuten:false },
+
+  { id:"strata", name:"Citi Strata Premier", issuer:"citi", pointValue:0.01,
+    categories:{ hotels:{base:10,boosted:false,label:"10x ThankYou"}, hotels_portal:{base:10,boosted:false,label:"10x ThankYou"}, car_rental:{base:10,boosted:false,label:"10x ThankYou"}, attractions:{base:10,boosted:false,label:"10x ThankYou"}, air:{base:3,boosted:false,label:"3x ThankYou"}, air_portal:{base:3,boosted:false,label:"3x ThankYou"}, dining:{base:3,boosted:false,label:"3x ThankYou"}, grocery:{base:3,boosted:false,label:"3x ThankYou"}, gas:{base:3,boosted:false,label:"3x ThankYou"}, ev_charging:{base:3,boosted:false,label:"3x ThankYou"}, other:{base:1,boosted:false,label:"1x ThankYou"} },
+    perks:["$100 hotel benefit ($500+ booking)","Transfer to 18+ airline partners"], rakuten:false },
+
+  { id:"amex_plat", name:"Amex Platinum", issuer:"amex", pointValue:0.01,
+    categories:{ air:{base:5,boosted:false,label:"5x MR (direct or Amex Travel)"}, air_portal:{base:5,boosted:false,label:"5x MR (Amex Travel)"}, hotels:{base:5,boosted:false,label:"5x MR (prepaid via Amex Travel)"}, hotels_portal:{base:5,boosted:false,label:"5x MR (prepaid via Amex Travel)"}, travel:{base:1,boosted:false,label:"1x MR"}, dining:{base:1,boosted:false,label:"1x MR"}, grocery:{base:1,boosted:false,label:"1x MR"}, other:{base:1,boosted:false,label:"1x MR"} },
+    perks:["$200 airline fee credit","Centurion Lounge","Fine Hotels & Resorts"], note:"Shown at 1¢/MR. Transfer to airlines/hotels = up to 2¢+/MR. Rakuten: set to earn MR points.", rakuten:true }
+];
+
+const MERCHANT_MAP = [
+  { terms:["uniqlo","zara","h&m","gap","banana republic","old navy","forever 21","nordstrom","macy","bloomingdale","neiman","saks","tj maxx","marshalls","ross","target","walmart","nike","adidas","lululemon","anthropologie","urban outfitter","aritzia","express","j.crew","abercrombie","hollister","patagonia","clothing","apparel","fashion","retail","shop"], cat:"other" },
+  { terms:["costco"], cat:"costco" },
+  { terms:["whole foods","trader joe","safeway","kroger","sprouts","ralph","vons","publix","heb","aldi","grocery","supermarket"], cat:"grocery" },
+  { terms:["instacart","shipt","online grocery"], cat:"online_grocery" },
+  { terms:["restaurant","cafe","coffee","starbucks","mcdonald","chipotle","subway","pizza","sushi","burger","taco","dining","doordash","ubereats","grubhub"], cat:"dining" },
+  { terms:["shell","chevron","arco","bp","exxon","mobil","76","texaco","gas station","fuel"], cat:"gas" },
+  { terms:["tesla supercharger","electrify america","chargepoint","blink charging","ev charging"], cat:"ev_charging" },
+  { terms:["united airlines","delta","american airlines","southwest","jetblue","alaska airlines","spirit","lufthansa","british airways","air france","flight","airline","airfare"], cat:"air" },
+  { terms:["marriott","hilton","hyatt","ihg","wyndham","best western","four seasons","ritz","sheraton","w hotel","hotel","motel","resort","airbnb","vrbo"], cat:"hotels" },
+  { terms:["hertz","enterprise","avis","budget","national car","alamo","dollar rent","thrifty","car rental"], cat:"car_rental" },
+  { terms:["uber","lyft","amtrak","greyhound","transit","train","bus"], cat:"travel" },
+  { terms:["cvs","walgreens","rite aid","drugstore","pharmacy"], cat:"drugstore" },
+  { terms:["amazon","ebay","etsy","wayfair","newegg","online shopping","bestbuy.com"], cat:"online_shopping" },
+  { terms:["netflix","hulu","disney+","hbo","apple tv","spotify","youtube premium","peacock","streaming"], cat:"streaming" },
+  { terms:["sam's club","bj's wholesale","wholesale club","warehouse club"], cat:"wholesale" },
+  { terms:["disneyland","universal studios","six flags","museum","zoo","concert","theater","event","attraction","stubhub","ticketmaster"], cat:"attractions" },
+  { terms:["chase travel","book via chase","via portal"], cat:"air_portal" }
+];
+
+const CATEGORIES = [
+  {id:"air_portal", label:"✈️ Flights — Chase/Amex Portal"},
+  {id:"hotels_portal", label:"🏨 Hotels — Chase/Amex Portal"},
+  {id:"air", label:"✈️ Flights — Direct with Airline"},
+  {id:"hotels", label:"🏨 Hotels — Direct with Hotel"},
+  {id:"travel", label:"🌍 Travel / Rideshare / Transit"},
+  {id:"dining", label:"🍽️ Dining & Restaurants"},
+  {id:"grocery", label:"🛒 Grocery Stores"},
+  {id:"online_grocery", label:"🛒 Online Grocery"},
+  {id:"gas", label:"⛽ Gas Stations"},
+  {id:"ev_charging", label:"⚡ EV Charging"},
+  {id:"online_shopping", label:"🛍️ Online Shopping"},
+  {id:"costco", label:"🏢 Costco (in-store)"},
+  {id:"wholesale", label:"📦 Wholesale Clubs"},
+  {id:"drugstore", label:"💊 Drugstores"},
+  {id:"streaming", label:"📺 Streaming Services"},
+  {id:"car_rental", label:"🚗 Car Rentals"},
+  {id:"attractions", label:"🎡 Attractions & Events"},
+  {id:"other", label:"🏷️ Everything Else"}
+];
+
+let state = { query:"", selected:null, selectedLabel:"", merchantName:"", matchedMerchant:false, showAll:false };
+
+function getRate(card, catId) {
+  const cat = card.categories[catId] || card.categories["other"];
+  if (!cat) return { rate:0, label:"N/A" };
+  const rate = cat.boosted ? cat.base * DIAMOND_BOOST : cat.base;
+  return { rate, label:cat.label };
+}
+function getRankings(catId) {
+  return CARDS.map(c => { const r=getRate(c,catId); return {...r, card:c, pct:r.rate*c.pointValue*100}; })
+    .sort((a,b)=>b.pct-a.pct).filter(r=>r.rate>0);
+}
+function getMerchantCat(q) {
+  const lq = q.toLowerCase();
+  for (const e of MERCHANT_MAP) { if (e.terms.some(t=>lq.includes(t))) return e.cat; }
+  return null;
+}
+function buildPrompt(merchant, bestCard) {
+  const m = merchant || state.selectedLabel;
+  return `I'm about to shop at ${m}. My best base card is ${bestCard}. Search for:\n1. Amex Offers for ${m}\n2. Chase Offers for ${m}\n3. Citi/BofA merchant offers for ${m}\n4. Rakuten cash back rate for ${m} (in-store and online)\n5. Any shopping portal bonuses\n6. Best overall stack\n\nMy cards: BofA Premium Rewards Preferred, BofA Cash Rewards (Diamond Honors 75% bonus), Chase Sapphire Preferred, Chase Sapphire Reserve, Chase Freedom Unlimited, Citi Costco, Citi Strata Premier, Amex Platinum. I have Rakuten.`;
+}
+function buildRatesPrompt() {
+  return `Please verify the current earn rates for all my credit cards as of today. Have any changed recently?\n\n1. BofA Premium Rewards Preferred — travel, dining, grocery, gas, other (I'm Diamond Honors — 75% bonus)\n2. BofA Cash Rewards — online shopping (3% chosen category), grocery, other (Diamond Honors)\n3. Chase Sapphire Preferred — portal vs direct travel, dining, streaming, grocery\n4. Chase Sapphire Reserve — portal vs direct travel, dining, other\n5. Chase Freedom Unlimited — dining, drugstore, other\n6. Citi Costco Anywhere Visa — gas, EV, travel, dining, Costco, other\n7. Citi Strata Premier — hotels, air, dining, grocery, gas, other\n8. Amex Platinum — flights direct, hotels via Amex Travel, other\n\nTell me what the correct current rates are and flag anything that has changed.`;
+}
+function openClaude() {
+  const r=getRankings(state.selected); const best=r[0];
+  window.open('https://claude.ai/new?q='+encodeURIComponent(buildPrompt(state.merchantName,best?best.card.name:"best card")),'_blank');
+}
+function openChatGPT() {
+  const r=getRankings(state.selected); const best=r[0];
+  window.open('https://chatgpt.com/?q='+encodeURIComponent(buildPrompt(state.merchantName,best?best.card.name:"best card")),'_blank');
+}
+function checkRates() {
+  window.open('https://claude.ai/new?q='+encodeURIComponent(buildRatesPrompt()),'_blank');
+}
+function handleSearch(val) {
+  state.query=val; state.showAll=false;
+  document.getElementById('clear-btn').style.display = val?'block':'none';
+  if (!val.trim()) { state.selected=null; state.merchantName=""; state.matchedMerchant=false; render(); return; }
+  const catId=getMerchantCat(val);
+  if (catId) {
+    const cat=CATEGORIES.find(c=>c.id===catId);
+    state.selected=catId; state.selectedLabel=cat?cat.label:catId;
+    state.merchantName=val.trim(); state.matchedMerchant=true;
+  } else {
+    const catMatch=CATEGORIES.find(c=>c.label.toLowerCase().includes(val.toLowerCase()));
+    if (catMatch){state.selected=catMatch.id; state.selectedLabel=catMatch.label;}
+    else state.selected=null;
+    state.merchantName=val.trim(); state.matchedMerchant=false;
+  }
+  render();
+}
+function clearSearch() {
+  document.getElementById('search').value='';
+  document.getElementById('clear-btn').style.display='none';
+  state={...state,query:"",selected:null,merchantName:"",matchedMerchant:false,showAll:false};
+  render();
+}
+function selectCat(id,label) { state.selected=id; state.selectedLabel=label; state.showAll=false; render(); }
+function toggleRankings() {
+  state.showAll=!state.showAll;
+  const list=document.getElementById('rankings-list');
+  const btn=document.getElementById('toggle-btn');
+  list.style.display=state.showAll?'flex':'none';
+  btn.textContent=state.showAll?'▲ Hide Full Rankings':'▼ Show All Card Rankings';
+}
+function render() {
+  const {query,selected,selectedLabel,merchantName,matchedMerchant}=state;
+  // match banner
+  const mb=document.getElementById('match-banner');
+  if (matchedMerchant&&selected){mb.style.display='block';mb.innerHTML='✓ <strong>'+merchantName+'</strong> matched to: '+selectedLabel;}
+  else mb.style.display='none';
+  // no match
+  const nm=document.getElementById('no-match');
+  if (query&&!selected){nm.style.display='block';nm.innerHTML='No exact match — pick a category below, or <a onclick="openClaude()">ask Claude directly →</a>';}
+  else nm.style.display='none';
+  // cat grid
+  const grid=document.getElementById('cat-grid');
+  if (matchedMerchant){grid.style.display='none';}
+  else {
+    grid.style.display='grid';
+    const filtered=!query?CATEGORIES:CATEGORIES.filter(c=>c.label.toLowerCase().includes(query.toLowerCase()));
+    grid.innerHTML=filtered.map(c=>`<button class="cat-btn${selected===c.id?' active':''}" onclick="selectCat('${c.id}','${c.label.replace(/'/g,"\\'")}')"> ${c.label}</button>`).join('');
+  }
+  // result
+  const resultEl=document.getElementById('result');
+  const emptyEl=document.getElementById('empty-state');
+  if (selected) {
+    resultEl.style.display='block'; emptyEl.style.display='none';
+    const rankings=getRankings(selected); const best=rankings[0];
+    document.getElementById('winner-name').textContent=best.card.name;
+    document.getElementById('winner-pct').textContent=best.pct.toFixed(2)+'%';
+    document.getElementById('winner-label').textContent='effective cash back · '+best.label;
+    const noteEl=document.getElementById('winner-note');
+    if (best.card.note){noteEl.style.display='block';noteEl.textContent='💡 '+best.card.note;}
+    else noteEl.style.display='none';
+    document.getElementById('winner-perks').innerHTML=best.card.perks.map(p=>`<span>✓ ${p}</span>`).join('');
+    // rebuild rankings
+    const list=document.getElementById('rankings-list');
+    list.innerHTML=rankings.map((r,i)=>`
+      <div class="rank-row">
+        <div class="rank-num" style="background:${ISSUER_COLORS[r.card.issuer]}">${i+1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${r.card.name}</div>
+          <div class="rank-label">${r.label}</div>
+        </div>
+        <div class="rank-right">
+          <div class="rank-pct${i===0?' gold':''}">${r.pct.toFixed(2)}%</div>
+          ${r.card.rakuten?'<div class="rakuten-tag">+Rakuten</div>':''}
+        </div>
+      </div>`).join('');
+    if (!state.showAll) list.style.display='none';
+  } else {
+    resultEl.style.display='none'; emptyEl.style.display='block';
+  }
+}
+render();
+</script>
+</body>
+</html>
