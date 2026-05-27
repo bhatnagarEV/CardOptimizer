@@ -248,19 +248,33 @@ function getMerchantCat(q) {
   return null;
 }
 function buildPrompt(merchant, bestCard) {
-  const m = merchant || state.selectedLabel;
-  return `I'm about to shop at ${m}. My best base card is ${bestCard}. Search for:\n1. Amex Offers for ${m}\n2. Chase Offers for ${m}\n3. Citi/BofA merchant offers for ${m}\n4. Rakuten cash back rate for ${m} (in-store and online)\n5. Any shopping portal bonuses\n6. Best overall stack\n\nMy cards: BofA Premium Rewards Preferred, BofA Cash Rewards (Diamond Honors 75% bonus), Chase Sapphire Preferred, Chase Sapphire Reserve, Chase Freedom Unlimited, Citi Costco, Citi Strata Premier, Amex Platinum. I have Rakuten.`;
+  return `I am about to shop at ${merchant}. I have the following cards:
+
+1. BofA Premium Rewards Preferred
+2. BofA Cash Rewards
+3. Chase Sapphire Preferred
+4. Chase Sapphire Reserve
+5. Chase Freedom Unlimited
+6. Citi Costco
+7. Citi Strata Premier
+8. Amex Platinum
+
+I am a Diamond Honors member of BofA, so I get extra bonus. I also have Rakuten membership.
+
+Check public offers on the above cards and advise what rewards will I get on each card at ${merchant}. Feel free to use Rakuten with a credit card to stack benefits. Please make sure to check current rates and public offers that are valid. Show in-store and online in different rows, if the rewards are different.
+
+Stack rank results based on the rewards. Display the result with your comments in a tabular format.`;
 }
 function buildRatesPrompt() {
   return `Please verify the current earn rates for all my credit cards as of today. Have any changed recently?\n\n1. BofA Premium Rewards Preferred — travel, dining, grocery, gas, other (I'm Diamond Honors — 75% bonus)\n2. BofA Cash Rewards — online shopping (3% chosen category), grocery, other (Diamond Honors)\n3. Chase Sapphire Preferred — portal vs direct travel, dining, streaming, grocery\n4. Chase Sapphire Reserve — portal vs direct travel, dining, other\n5. Chase Freedom Unlimited — dining, drugstore, other\n6. Citi Costco Anywhere Visa — gas, EV, travel, dining, Costco, other\n7. Citi Strata Premier — hotels, air, dining, grocery, gas, other\n8. Amex Platinum — flights direct, hotels via Amex Travel, other\n\nTell me what the correct current rates are and flag anything that has changed.`;
 }
 function openClaude() {
-  const r=getRankings(state.selected); const best=r[0];
-  window.open('https://claude.ai/new?q='+encodeURIComponent(buildPrompt(state.merchantName,best?best.card.name:"best card")),'_blank');
+  const merchant = state.merchantName || state.selectedLabel;
+  window.open('https://claude.ai/new?q='+encodeURIComponent(buildPrompt(merchant)),'_blank');
 }
 function openChatGPT() {
-  const r=getRankings(state.selected); const best=r[0];
-  window.open('https://chatgpt.com/?q='+encodeURIComponent(buildPrompt(state.merchantName,best?best.card.name:"best card")),'_blank');
+  const merchant = state.merchantName || state.selectedLabel;
+  window.open('https://chatgpt.com/?q='+encodeURIComponent(buildPrompt(merchant)),'_blank');
 }
 function checkRates() {
   window.open('https://claude.ai/new?q='+encodeURIComponent(buildRatesPrompt()),'_blank');
